@@ -10,3 +10,5 @@ Notes written as I went, on what was new to me and how I worked it out.
 
 ## dbt
 - (to fill in as I go)
+
+Uploaded via the Snowsight UI (manual step). The scripted equivalent is PUT file://... @stage via the Snowflake CLI.
