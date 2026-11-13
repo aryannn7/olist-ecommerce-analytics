@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: olist_raw
+    description: Raw Olist CSVs loaded as-is into Snowflake with COPY INTO (see /ingest).
+    database: OLIST
+    schema: RAW
+    tables:
+      - name: customers
+        description: One row per customer_id (a customer_id is created per order).
+      - name: orders
+        description: One row per order with status and lifecycle timestamps.
+      - name: order_items
+        description: One row per item within an order.
+      - name: order_payments
+        description: One row per payment method used on an order.
+      - name: order_reviews
+        description: Customer reviews; contains duplicate review_ids.
+      - name: products
+        description: Product catalogue with Portuguese category names.
+      - name: sellers
+        description: One row per seller.
+      - name: product_category_translation
+        description: Portuguese to English category name lookup.
