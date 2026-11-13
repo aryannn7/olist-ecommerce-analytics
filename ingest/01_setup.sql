@@ -8,7 +8,7 @@ USE ROLE ACCOUNTADMIN;
 CREATE ROLE IF NOT EXISTS TRANSFORMER
   COMMENT = 'Loads raw data and runs dbt for the Olist project';
 GRANT ROLE TRANSFORMER TO ROLE SYSADMIN;
-GRANT ROLE TRANSFORMER TO USER "aryandhawan210";
+GRANT ROLE TRANSFORMER TO USER <"snowflake_user">;
 
 -- 2. A small warehouse that switches itself off when idle
 CREATE WAREHOUSE IF NOT EXISTS TRANSFORM_WH
