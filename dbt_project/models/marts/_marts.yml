@@ -1,0 +1,108 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: One row per real customer (customer_unique_id), a denormalised view of customers and their orders.
+    columns:
+      - name: customer_sk
+        description: Surrogate key (hash of customer_unique_id).
+        tests: [unique, not_null]
+      - name: customer_unique_id
+        description: Olist's identifier for the real person across orders.
+        tests: [unique, not_null]
+      - name: customer_city
+        description: City from the customer's most recent order.
+      - name: customer_state
+        description: Brazilian state code from the most recent order.
+      - name: customer_zip_code_prefix
+        description: First 5 digits of the postcode (text, leading zeros kept).
+      - name: first_order_at
+        description: Timestamp of the customer's first order.
+      - name: last_order_at
+        description: Timestamp of the customer's most recent order.
+      - name: lifetime_orders
+        description: Number of distinct orders placed (all statuses).
+      - name: is_repeat_customer
+        description: TRUE if the customer placed more than one order.
+
+  - name: dim_products
+    description: One row per product, with the category translated to English.
+    columns:
+      - name: product_sk
+        description: Surrogate key (hash of product_id).
+        tests: [unique, not_null]
+      - name: product_id
+        description: Olist product identifier.
+        tests: [unique, not_null]
+      - name: product_category
+        description: English category name; falls back to the Portuguese name, then 'unknown'.
+      - name: product_category_name_pt
+        description: Original Portuguese category name.
+      - name: product_photos_qty
+        description: Number of photos on the product listing.
+      - name: product_weight_g
+        description: Product weight in grams.
+      - name: product_length_cm
+        description: Package length in cm.
+      - name: product_height_cm
+        description: Package height in cm.
+      - name: product_width_cm
+        description: Package width in cm.
+
+  - name: fct_order_items
+    description: One row per item sold. The central fact table of the star schema.
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "price >= 0 and freight_value >= 0"
+    columns:
+      - name: order_item_sk
+        description: Surrogate key (hash of order_id and order_item_number).
+        tests: [unique, not_null]
+      - name: order_id
+        description: Order the item belongs to.
+        tests: [not_null]
+      - name: order_item_number
+        description: Position of the item within the order (1, 2, 3...).
+      - name: customer_sk
+        description: Foreign key to dim_customers.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_sk
+      - name: product_sk
+        description: Foreign key to dim_products.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: product_sk
+      - name: seller_id
+        description: Seller who fulfilled the item.
+      - name: order_status
+        description: Order status (delivered, shipped, canceled...).
+      - name: purchased_at
+        description: When the order was placed.
+      - name: order_date
+        description: Purchase date (no time), used for trends.
+      - name: delivered_to_customer_at
+        description: When the customer received the order (null if not delivered).
+      - name: estimated_delivery_at
+        description: Delivery date promised to the customer at purchase.
+      - name: price
+        description: Item price in BRL.
+      - name: freight_value
+        description: Shipping cost allocated to the item in BRL.
+      - name: item_total
+        description: price + freight_value.
+      - name: delivery_days
+        description: Days from purchase to delivery.
+      - name: days_late
+        description: Days delivered after the promised date (negative = early).
+      - name: is_late
+        description: TRUE if delivered after the promised date; null if not delivered.
+      - name: review_score
+        description: Customer's 1 to 5 review for the whole order (repeated on each item).
