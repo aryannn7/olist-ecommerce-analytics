@@ -9,6 +9,10 @@ Notes written as I went, on what was new to me and how I worked it out.
 - `IF NOT EXISTS` makes setup scripts safe to re run (idempotent). My first run failed halfway and re-running was safe.
 
 ## dbt
-- (to fill in as I go)
+- dbt connects with a key-pair service user (DBT_SVC). My human user is lowercase, and key-pair login sends the name in capitals, so a dedicated uppercase service user fixed "JWT token is invalid". Also better practice: tools shouldn't log in as people.
+- Staging models are views (always fresh, no storage). Marts are tables (fast for analysts).
+- Snowflake doesn't enforce PK/FK constraints, so dbt tests (unique, not_null, relationships) prove them on every build. First build: 8 models, 27 tests passing.
+- dbt's default schema naming gives DEV_STAGING; a generate_schema_name macro gives clean STAGING / MARTS.
+- VS Code: unsaved files caused empty commits and "file is empty" errors. Turned on Auto Save.
 
 Uploaded via the Snowsight UI (manual step). The scripted equivalent is PUT file://... @stage via the Snowflake CLI.
