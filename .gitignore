@@ -1,0 +1,25 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets: never commit these
+.env
+profiles.yml
+*.p8
+*.pem
+
+# dbt build output
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+logs/
+
+# Raw data (download from Kaggle instead)
+data/
+*.csv
+*.zip
+
+# OS / editor
+.DS_Store
+.vscode/
