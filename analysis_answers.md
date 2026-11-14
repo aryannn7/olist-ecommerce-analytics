@@ -39,4 +39,42 @@ This is a modest, low-risk direct return. The larger value is protecting review 
 - **Design:** randomised holdout. Half of late customers get the voucher, half get nothing (control).
 - **Primary metric:** repeat-purchase rate within 60 days, treatment vs control.
 - **Leading indicators (2–4 weeks):** voucher redemption rate, and average review score of treated vs control orders.
-- **Sample size:** detecting 3% → 8% at 95% confidence and 80% power needs ~320 customers per group, about **2 months of
+- **Sample size:** detecting 3% → 8% at 95% confidence and 80% power needs ~320 customers per group, about **2 months of late orders**. First read on reviews at **4 weeks**, decision on repeat purchase at **~12 weeks**.
+- **Success:** a statistically clear lift in 60-day repeat rate with net revenue above voucher cost.
+
+## B3. Assumptions, caveats and data quality
+
+**Assumptions and limitations I'd flag to a client**
+- **Correlation, not causation.** Late orders get worse reviews, but product type or seller may also play a part. The holdout test is what proves impact.
+- **Review grain.** The source has 814 duplicate `review_id`s; I kept one review per order (latest). Review score is order-level, so all review analysis is done per order, not per item.
+- **"Late"** is measured against Olist's promised date, at day level; undelivered orders are excluded rather than counted as late.
+- **Incomplete edges.** 2016 and Sep–Oct 2018 are partial months, so trends exclude them from conclusions.
+- **Location** is the customer's most recent address; revenue is item price in BRL, excluding freight; no inflation adjustment.
+- **Impact estimate** is directional: the 5pp lift is an assumption to be tested, not a forecast.
+
+**Top 3 production data quality checks**
+1. **Source freshness:** `dbt source freshness` on `_loaded_at`, warning if raw tables haven't loaded within the expected window.
+2. **Volume and reconciliation:** row counts per load compared with the previous load (alert on large swings), and `fct_order_items` rows = `stg_order_items` rows, so no items are lost or duplicated by joins.
+3. **Key integrity:** the existing `unique` / `not_null` / `relationships` tests on every key, plus `accepted_values` on statuses and review scores, run in CI on every pull request and failing the build.
+
+## B4. Client memo
+
+**To:** CFO / COO, Olist
+**Subject:** Late deliveries are costing reviews and repeat customers. A low-cost test to win them back
+
+We've built a reliable data pipeline for your order data: raw files load automatically into Snowflake, and are cleaned, tested (43 automated checks) and modelled in dbt into simple tables for reporting. Every number below can be traced and re-run.
+
+Two findings stand out. First, late deliveries drive bad reviews: on-time orders average 4.3★, but orders more than a week late average 1.7★. Rio de Janeiro and Bahia have nearly three times São Paulo's late rate. Second, only 3% of customers ever buy again, so growth depends almost entirely on acquiring new customers.
+
+**Recommended next step:** a 12-week controlled test. Customers whose order arrives late get an apology and a 10% voucher; a matched group gets nothing. We estimate about BRL 22k net a year from repeat orders, and the test will show what fixing delivery in the worst regions is worth.
+
+Decision needed: approval to run the test, plus access to email/CRM to send the vouchers.
+
+## B5. LLM use case (bonus)
+
+**Use case:** classify review comments (Portuguese free text) into complaint themes with Snowflake Cortex, so operations can see *why* customers are unhappy, not just the score.
+- **Example prompt:** "Classify this Brazilian Portuguese review into one of: late delivery, wrong/missing item, damaged product, product quality, seller communication, positive, other. Return only the label."
+- **Data retrieved:** `review_comment_message`, `review_score`, `is_late`, `customer_state` for 1–3★ orders.
+- **Output:** one label per review, stored as a column, e.g. `complaint_theme`, so you can chart "% of bad reviews mentioning late delivery, by state".
+- **Main risk:** misclassification (hallucinated or inconsistent labels), plus customer text possibly containing personal data.
+- **Mitigation:** a fixed label list (no free text), human-check a random 200-review sample before trusting it, keep the prompt versioned in git, run it incrementally on new reviews only to control cost, and mask names and emails before sending text to the model.
